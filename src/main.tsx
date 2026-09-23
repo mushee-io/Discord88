@@ -1,4 +1,5 @@
 import './browserPolyfills';
+import { setupDiscordActivity } from './discordActivity';
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import { ThirtyThreeBetaScreen } from './components/ThirtyThreeBetaScreen';
@@ -12,6 +13,8 @@ import { FortyFourMiladyScreen } from './components/FortyFourMiladyScreen';
 import { SeventySeventyScreen } from './components/SeventySeventyScreen';
 import { AppErrorBoundary } from './components/AppErrorBoundary';
 import './index.css';
+
+void setupDiscordActivity();
 
 const pathname = window.location.pathname;
 const isFastMarkets = pathname === '/33-beta' || pathname === '/beta';
