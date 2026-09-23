@@ -1,0 +1,61 @@
+const base="https://maryjane-blue.vercel.app";
+const market="B76aB9GWZPtFqwuyTPjB33Gys1UgCQXw27mdyPKEMyeF";
+
+async function waitForState(){
+  let last="";
+  for(let attempt=1;attempt<=18;attempt++){
+    try{
+      const response=await fetch(`${base}/api/native-market-state?address=${market}`,{cache:"no-store",signal:AbortSignal.timeout(12000)});
+      last=await response.text();
+      console.log(`state attempt ${attempt} status=${response.status} ${last.slice(0,1000)}`);
+      if(response.ok){
+        const data=JSON.parse(last);
+        if(data?.market?.address===market && data?.market?.status && data?.book?.yes && data?.book?.no){
+          return data;
+        }
+      }
+    }catch(error){console.log(`state attempt ${attempt} error=${error?.message||error}`);}
+    await new Promise(r=>setTimeout(r,8000));
+  }
+  throw new Error(`native market state never became healthy: ${last}`);
+}
+
+async function controlledError(path){
+  let last="";
+  for(let attempt=1;attempt<=18;attempt++){
+    try{
+      const response=await fetch(`${base}${path}`,{
+        method:"POST",
+        headers:{"content-type":"application/json"},
+        body:JSON.stringify({}),
+        signal:AbortSignal.timeout(12000),
+      });
+      last=await response.text();
+      console.log(`${path} attempt=${attempt} status=${response.status} body=${last.slice(0,500)}`);
+      if(response.status<500){
+        let data;
+        try{data=JSON.parse(last);}catch{throw new Error(`${path} did not return JSON`);}
+        if(!data?.error)throw new Error(`${path} did not return a controlled error`);
+        return;
+      }
+    }catch(error){
+      console.log(`${path} attempt=${attempt} error=${error?.message||error}`);
+    }
+    await new Promise(r=>setTimeout(r,8000));
+  }
+  throw new Error(`${path} never became healthy: ${last}`);
+}
+
+const state=await waitForState();
+await controlledError("/api/order-place");
+await controlledError("/api/order-fill");
+await controlledError("/api/order-cancel");
+await controlledError("/api/complete-set");
+
+console.log(JSON.stringify({
+  nativeTerminal:"PASS",
+  address:state.market.address,
+  status:state.market.status,
+  activeOrders:state.book.activeOrderCount,
+  recentTrades:state.recentTrades?.length||0,
+},null,2));
