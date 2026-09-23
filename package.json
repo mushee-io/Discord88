@@ -37,7 +37,8 @@
     "uuid": "8.3.2",
     "bs58": "^6.0.0",
     "@pythnetwork/pyth-solana-receiver": "0.16.0",
-    "buffer": "6.0.3"
+    "buffer": "6.0.3",
+    "@discord/embedded-app-sdk": "^2.5.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
